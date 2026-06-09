@@ -17,6 +17,7 @@ import subprocess
 import sys
 import time
 import signal
+import webbrowser
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -75,6 +76,20 @@ def wait_for_health():
         else:
             print(f"  ✗ {name:20s}  not responding after 20s (check logs/{name}.log)")
 
+def open_browsers():
+    urls = [
+        ("price-recon",     "http://localhost:8000"),
+        ("market-data-hub", "http://localhost:8001"),
+        ("alpha-pipeline",  "http://localhost:8002"),
+        ("data-onboard",    "http://localhost:8003"),
+        ("market-ops",      "http://localhost:8004"),
+    ]
+    print("\nOpening browser tabs...")
+    for name, url in urls:
+        webbrowser.open_new_tab(url)
+        print(f"  opened {name:20s}  {url}")
+        time.sleep(0.3)
+
 def shutdown(sig=None, frame=None):
     print("\nShutting down all services...")
     for name, port, p, log in procs:
@@ -90,6 +105,7 @@ if __name__ == "__main__":
     print("MarketVentures — launching all 5 services\n")
     launch()
     wait_for_health()
+    open_browsers()
 
     print("\n─────────────────────────────────────────────")
     print("All services running. Dashboard URLs:")
@@ -99,7 +115,9 @@ if __name__ == "__main__":
     print("  data-onboard    →  http://localhost:8003")
     print("  market-ops      →  http://localhost:8004  (WebSocket dashboard)")
     print("\nPress Ctrl+C to stop all services.")
-    print("Logs: MarketVentures/logs/<service>.log")
+    print("Launch logs : MarketVentures/logs/<service>.log")
+    print("Error logs  : MarketVentures/<service>/logs/error.log")
+    print("App logs    : MarketVentures/<service>/logs/app.log")
     print("─────────────────────────────────────────────\n")
 
     # Keep alive, watch for crashed processes

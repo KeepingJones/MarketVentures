@@ -31,6 +31,8 @@ MAX_POSITION_PCT        = 0.10   # max 10% NAV in any single name
 MAX_DAILY_LOSS_PCT      = 0.02   # halt trading if daily P&L < -2%
 MAX_POSITION_ADV_PCT    = 0.10   # max 10% of 30-day ADV per position
 VAR_95_LIMIT_PCT        = 0.03   # 1-day VaR (95%) < 3% NAV
+VAR_CONFIDENCE_95       = 0.95
+VAR_CONFIDENCE_99       = 0.99
 VAR_LOOKBACK_DAYS       = 252
 
 STRESS_SCENARIOS = {

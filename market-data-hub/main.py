@@ -11,13 +11,42 @@ Run modes:
 """
 import argparse
 import logging
+import logging.handlers
 import sys
+from pathlib import Path
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
+
+def _setup_logging() -> None:
+    log_dir = Path(__file__).parent / "logs"
+    log_dir.mkdir(exist_ok=True)
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s")
+
+    console = logging.StreamHandler(sys.stdout)
+    console.setFormatter(fmt)
+
+    app_file = logging.handlers.RotatingFileHandler(
+        log_dir / "app.log", maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
+    )
+    app_file.setFormatter(fmt)
+
+    err_file = logging.handlers.RotatingFileHandler(
+        log_dir / "error.log", maxBytes=2 * 1024 * 1024, backupCount=3, encoding="utf-8"
+    )
+    err_file.setLevel(logging.ERROR)
+    err_file.setFormatter(fmt)
+
+    logging.basicConfig(level=logging.INFO, handlers=[console, app_file, err_file])
+
+    def _excepthook(exc_type, exc_value, exc_tb):
+        if not issubclass(exc_type, KeyboardInterrupt):
+            logging.getLogger("market-data-hub").critical(
+                "Unhandled exception", exc_info=(exc_type, exc_value, exc_tb)
+            )
+        sys.__excepthook__(exc_type, exc_value, exc_tb)
+    sys.excepthook = _excepthook
+
+
+_setup_logging()
 logger = logging.getLogger(__name__)
 
 

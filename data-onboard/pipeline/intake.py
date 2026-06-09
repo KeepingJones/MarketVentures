@@ -132,7 +132,7 @@ Be specific. Use the vendor details provided."""
         return resp.json().get("response", "LLM spec generation unavailable.")
     except Exception as e:
         logger.error(f"LLM spec generation failed: {e}")
-        return f"Integration spec for {form.get('vendor_name', 'Unknown vendor')} — LLM unavailable."
+        return f"Integration spec for {form.get('vendor_name', 'Unknown vendor')} - LLM unavailable."
 
 
 def process_intake(form: dict, sample_tickers: Optional[list[str]] = None) -> dict:
