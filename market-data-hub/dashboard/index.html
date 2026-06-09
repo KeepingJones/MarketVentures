@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>market-data-hub — Data Catalogue</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; }
+    header { background: #1a1f2e; border-bottom: 1px solid #2d3748; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header span { font-size: 12px; color: #718096; }
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge.active   { background: #1c4532; color: #68d391; }
+    .badge.inactive { background: #2d3748; color: #718096; }
+    .badge.onboarding { background: #744210; color: #f6ad55; }
+    .score-high   { color: #68d391; font-weight: 700; }
+    .score-medium { color: #f6ad55; font-weight: 700; }
+    .score-low    { color: #fc8181; font-weight: 700; }
+
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 24px; }
+    .card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; }
+    .card h3 { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .card .value { font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .card .value.green { color: #68d391; }
+    .card .value.amber { color: #f6ad55; }
+
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 24px 24px; }
+    .chart-card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; }
+    .chart-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+
+    .section { padding: 0 24px 24px; }
+    .section h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.6px; }
+
+    table { width: 100%; border-collapse: collapse; background: #1a1f2e; border-radius: 8px; overflow: hidden; }
+    th { background: #2d3748; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #a0aec0; }
+    td { padding: 10px 14px; font-size: 13px; border-top: 1px solid #2d3748; font-variant-numeric: tabular-nums; }
+    tr:hover td { background: #1e2538; }
+
+    .btn { padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-primary { background: #3182ce; color: white; }
+    .btn-primary:hover { background: #2b6cb0; }
+    .btn-primary:disabled { background: #4a5568; cursor: not-allowed; }
+
+    .actions { padding: 0 24px 16px; display: flex; gap: 12px; align-items: center; }
+
+    .query-box { padding: 0 24px 24px; }
+    .query-box input { width: 100%; padding: 10px 14px; background: #1a1f2e; border: 1px solid #2d3748; border-radius: 6px; color: #e2e8f0; font-size: 14px; margin-bottom: 8px; }
+    .query-box input:focus { outline: none; border-color: #3182ce; }
+    .query-answer { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 6px; padding: 14px; font-size: 13px; line-height: 1.6; min-height: 60px; color: #a0aec0; white-space: pre-wrap; }
+
+    .risk-tag { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; background: #742a2a; color: #fc8181; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>market-data-hub</h1>
+    <span>Market Data Management Platform</span>
+    <span id="last-updated" style="margin-left: auto; font-size: 11px;"></span>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Active Vendors</h3>
+      <div class="value green" id="active-vendors">—</div>
+    </div>
+    <div class="card">
+      <h3>Avg Quality Score</h3>
+      <div class="value" id="avg-quality">—</div>
+    </div>
+    <div class="card">
+      <h3>Datasets Catalogued</h3>
+      <div class="value" id="total-datasets">—</div>
+    </div>
+    <div class="card">
+      <h3>Risk Path Datasets</h3>
+      <div class="value amber" id="risk-datasets">—</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-card">
+      <h3>Vendor Quality Scores</h3>
+      <canvas id="qualityChart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Usage by Desk</h3>
+      <canvas id="usageChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="score-btn" onclick="runScoring()">Run Quality Scoring</button>
+  </div>
+
+  <div class="section">
+    <h2>Vendor Registry</h2>
+    <table>
+      <thead>
+        <tr><th>Vendor</th><th>Delivery</th><th>SLA (min)</th><th>Cost/yr</th><th>Status</th><th>Quality</th><th>Coverage</th></tr>
+      </thead>
+      <tbody id="vendor-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Risk-Path Datasets</h2>
+    <table>
+      <thead>
+        <tr><th>Dataset</th><th>Vendor</th><th>Asset Class</th><th>Frequency</th><th>Licence</th><th>Quality</th></tr>
+      </thead>
+      <tbody id="risk-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="query-box">
+    <h2 style="font-size:14px; font-weight:600; margin-bottom:10px; color:#a0aec0; text-transform:uppercase; letter-spacing:0.6px;">LLM Catalogue Query</h2>
+    <input type="text" id="query-input" placeholder='e.g. "Which vendors cover FX data with execution licence?"' onkeydown="if(event.key==='Enter') runQuery()" />
+    <button class="btn btn-primary" onclick="runQuery()" style="margin-bottom:10px;">Ask</button>
+    <div class="query-answer" id="query-answer">Ask a question about the catalogue…</div>
+  </div>
+
+  <script>
+    const API = '';
+    let qualityChart, usageChart;
+
+    function scoreClass(s) {
+      if (s == null) return '';
+      if (s >= 80) return 'score-high';
+      if (s >= 50) return 'score-medium';
+      return 'score-low';
+    }
+
+    async function load() {
+      const [vendorsRes, qualityRes, datasetsRes, riskRes, usageRes] = await Promise.all([
+        fetch(`${API}/api/vendors`),
+        fetch(`${API}/api/quality`),
+        fetch(`${API}/api/datasets`),
+        fetch(`${API}/api/datasets/risk-path`),
+        fetch(`${API}/api/usage`),
+      ]);
+      const vendors  = await vendorsRes.json();
+      const quality  = await qualityRes.json();
+      const datasets = await datasetsRes.json();
+      const risk     = await riskRes.json();
+      const usage    = await usageRes.json();
+
+      // Summary cards
+      document.getElementById('active-vendors').textContent = vendors.filter(v => v.status === 'active').length;
+      document.getElementById('total-datasets').textContent = datasets.length;
+      document.getElementById('risk-datasets').textContent = risk.length;
+
+      const scores = quality.map(q => q.overall_score).filter(s => s != null);
+      const avg = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : '—';
+      const avgEl = document.getElementById('avg-quality');
+      avgEl.textContent = avg;
+      avgEl.className = 'value ' + (avg >= 80 ? 'score-high' : avg >= 50 ? 'score-medium' : 'score-low');
+
+      // Quality chart
+      const scoreMap = Object.fromEntries(quality.map(q => [q.vendor_id, q.overall_score]));
+      const vendorNames = vendors.map(v => v.name);
+      const vendorScores = vendors.map(v => scoreMap[v.id] ?? 0);
+      const barColors = vendorScores.map(s => s >= 80 ? '#68d391' : s >= 50 ? '#f6ad55' : '#fc8181');
+
+      if (qualityChart) qualityChart.destroy();
+      qualityChart = new Chart(document.getElementById('qualityChart'), {
+        type: 'bar',
+        data: {
+          labels: vendorNames,
+          datasets: [{ label: 'Quality Score', data: vendorScores, backgroundColor: barColors }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#a0aec0' }, grid: { color: '#2d3748' } },
+            y: { min: 0, max: 100, ticks: { color: '#a0aec0' }, grid: { color: '#2d3748' } }
+          }
+        }
+      });
+
+      // Usage by desk chart
+      const deskMap = {};
+      usage.forEach(u => { deskMap[u.desk] = (deskMap[u.desk] || 0) + u.queries; });
+      if (usageChart) usageChart.destroy();
+      usageChart = new Chart(document.getElementById('usageChart'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(deskMap),
+          datasets: [{ data: Object.values(deskMap),
+            backgroundColor: ['#63b3ed','#68d391','#f6ad55','#fc8181','#b794f4','#fbb6ce','#76e4f7'] }]
+        },
+        options: { plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+      });
+
+      // Vendor table
+      const vtbody = document.getElementById('vendor-tbody');
+      vtbody.innerHTML = vendors.map(v => {
+        const score = scoreMap[v.id];
+        const scoreHtml = score != null
+          ? `<span class="${scoreClass(score)}">${score.toFixed(1)}</span>`
+          : '<span style="color:#718096">—</span>';
+        return `<tr>
+          <td><strong>${v.name}</strong></td>
+          <td>${v.delivery}</td>
+          <td>${v.sla_latency_minutes}</td>
+          <td>${v.cost_usd_annual > 0 ? '$' + v.cost_usd_annual.toLocaleString() : 'Free'}</td>
+          <td><span class="badge ${v.status}">${v.status}</span></td>
+          <td>${scoreHtml}</td>
+          <td style="font-size:11px; color:#718096">${v.id}</td>
+        </tr>`;
+      }).join('');
+
+      // Risk path table
+      const rtbody = document.getElementById('risk-tbody');
+      rtbody.innerHTML = risk.map(d => `<tr>
+        <td><strong>${d.name}</strong></td>
+        <td>${d.vendor_id}</td>
+        <td>${d.asset_class}</td>
+        <td>${d.frequency}</td>
+        <td><span style="font-size:11px; color:#a0aec0">${d.licence_type}</span></td>
+        <td>${d.quality_score != null ? `<span class="${scoreClass(d.quality_score)}">${d.quality_score.toFixed(1)}</span>` : '—'}</td>
+      </tr>`).join('');
+
+      document.getElementById('last-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+    }
+
+    async function runScoring() {
+      const btn = document.getElementById('score-btn');
+      btn.disabled = true; btn.textContent = 'Scoring…';
+      try {
+        await fetch(`${API}/api/quality/run`, { method: 'POST' });
+        await load();
+      } finally { btn.disabled = false; btn.textContent = 'Run Quality Scoring'; }
+    }
+
+    async function runQuery() {
+      const q = document.getElementById('query-input').value.trim();
+      if (!q) return;
+      const answerEl = document.getElementById('query-answer');
+      answerEl.textContent = 'Thinking…';
+      try {
+        const resp = await fetch(`${API}/api/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q })
+        });
+        const data = await resp.json();
+        answerEl.textContent = data.answer;
+      } catch (e) {
+        answerEl.textContent = `Error: ${e}`;
+      }
+    }
+
+    load();
+    setInterval(load, 60000);
+  </script>
+</body>
+</html>

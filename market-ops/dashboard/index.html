@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Ops Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --panel-bg: #181a20;
+            --text-main: #f0f0f0;
+            --text-muted: #848e9c;
+            --border-color: #2b3139;
+            --accent-green: #0ecb81;
+            --accent-red: #f6465d;
+            --accent-yellow: #fcd535;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .panel h3 {
+            margin-top: 0;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Top row */
+        .summary-panel {
+            grid-column: span 3;
+            text-align: center;
+        }
+
+        .summary-val {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        /* Tables */
+        .table-panel {
+            grid-column: span 6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .val-red { color: var(--accent-red); }
+        .val-green { color: var(--accent-green); }
+
+        .tag-critical {
+            background-color: rgba(246, 70, 93, 0.2);
+            color: var(--accent-red);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .tag-warning {
+            background-color: rgba(252, 213, 53, 0.2);
+            color: var(--accent-yellow);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>MarketOps Live Dashboard</h1>
+        <div>
+            <span id="connection-status" class="status-badge">● LIVE</span>
+            <span id="last-update" style="margin-left: 10px; color: var(--text-muted); font-size: 12px;">Waiting for data...</span>
+        </div>
+    </div>
+
+    <div class="grid-container">
+        
+        <!-- Summary Cards -->
+        <div class="panel summary-panel">
+            <h3>Fund NAV (GBP)</h3>
+            <div id="nav-val" class="summary-val">£0.00</div>
+        </div>
+        
+        <div class="panel summary-panel">
+            <h3>VaR 95% (GBP)</h3>
+            <div id="var-val" class="summary-val">£0.00</div>
+        </div>
+        
+        <div class="panel summary-panel">
+            <h3>Drawdown</h3>
+            <div id="dd-val" class="summary-val">0.00%</div>
+        </div>
+
+        <div class="panel summary-panel">
+            <h3>Critical Breaks</h3>
+            <div id="breaks-val" class="summary-val">0</div>
+        </div>
+
+        <!-- Exception Tracker -->
+        <div class="panel table-panel">
+            <h3>Open Price Exceptions</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Instrument</th>
+                        <th>Type</th>
+                        <th>Severity</th>
+                        <th>Diff %</th>
+                    </tr>
+                </thead>
+                <tbody id="breaks-table-body">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Vendor Health -->
+        <div class="panel table-panel">
+            <h3>Vendor SLA Status</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vendor ID</th>
+                        <th>Status</th>
+                        <th>Avg Latency (ms)</th>
+                        <th>Uptime %</th>
+                    </tr>
+                </thead>
+                <tbody id="vendor-table-body">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        function formatMoney(n) {
+            return '£' + Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatPct(n) {
+            return Number(n * 100).toFixed(2) + '%';
+        }
+
+        const ws = new WebSocket(`ws://${window.location.host}/ws/live`);
+
+        ws.onopen = () => {
+            document.getElementById('connection-status').style.borderColor = 'var(--accent-green)';
+            document.getElementById('connection-status').style.color = 'var(--accent-green)';
+            document.getElementById('connection-status').innerText = '● LIVE';
+        };
+
+        ws.onclose = () => {
+            document.getElementById('connection-status').style.borderColor = 'var(--accent-red)';
+            document.getElementById('connection-status').style.color = 'var(--accent-red)';
+            document.getElementById('connection-status').innerText = '● DISCONNECTED';
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            // Update timestamp
+            document.getElementById('last-update').innerText = `Last updated: ${new Date().toLocaleTimeString()}`;
+
+            // Update Summary
+            if (data.fund) {
+                document.getElementById('nav-val').innerText = formatMoney(data.fund.nav_gbp);
+                document.getElementById('var-val').innerText = formatMoney(data.fund.var_95_gbp);
+                document.getElementById('dd-val').innerText = formatPct(data.fund.drawdown_pct);
+            }
+
+            if (data.breaks) {
+                document.getElementById('breaks-val').innerText = data.breaks.critical || 0;
+            }
+
+            // Update Exceptions Table
+            // Using placeholder logic as breaks structure is fetched from backend
+            // In a real scenario, map over data.breaks.summary or full break list
+            const breaksBody = document.getElementById('breaks-table-body');
+            breaksBody.innerHTML = '';
+            if (data.breaks && data.breaks.total_open > 0) {
+                // Just inserting a placeholder row indicating open breaks
+                breaksBody.innerHTML = `
+                    <tr>
+                        <td>Total Open Breaks</td>
+                        <td>Aggregate</td>
+                        <td><span class="tag-critical">${data.breaks.critical} Critical</span></td>
+                        <td>N/A</td>
+                    </tr>
+                `;
+            } else {
+                breaksBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted)">No open exceptions.</td></tr>`;
+            }
+
+            // Update Vendors Table
+            const vendorBody = document.getElementById('vendor-table-body');
+            vendorBody.innerHTML = '';
+            if (data.vendor_health && data.vendor_health.length > 0) {
+                let rows = '';
+                data.vendor_health.forEach(v => {
+                    let statusClass = v.quality_score > 90 ? 'val-green' : (v.quality_score > 70 ? 'tag-warning' : 'tag-critical');
+                    rows += `
+                        <tr>
+                            <td>${v.vendor_id}</td>
+                            <td><span class="${statusClass}">${v.status || 'OK'}</span></td>
+                            <td>${v.avg_latency_ms || 0}</td>
+                            <td>${v.uptime_pct || 100}%</td>
+                        </tr>
+                    `;
+                });
+                vendorBody.innerHTML = rows;
+            } else {
+                vendorBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted)">No active vendors.</td></tr>`;
+            }
+        };
+    </script>
+</body>
+</html>

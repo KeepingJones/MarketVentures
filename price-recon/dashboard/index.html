@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>price-recon — EOD Price Reconciliation</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; }
+    header { background: #1a1f2e; border-bottom: 1px solid #2d3748; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+    header span { font-size: 12px; color: #718096; }
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge.critical { background: #742a2a; color: #fc8181; }
+    .badge.warning  { background: #744210; color: #f6ad55; }
+    .badge.info     { background: #1a365d; color: #63b3ed; }
+    .badge.ok       { background: #1c4532; color: #68d391; }
+
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 24px; }
+    .card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; }
+    .card h3 { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .card .value { font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .card .value.critical { color: #fc8181; }
+    .card .value.warning  { color: #f6ad55; }
+    .card .value.ok       { color: #68d391; }
+
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 24px 24px; }
+    .chart-card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; }
+    .chart-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+
+    .breaks-table { padding: 0 24px 24px; }
+    .breaks-table table { width: 100%; border-collapse: collapse; background: #1a1f2e; border-radius: 8px; overflow: hidden; }
+    .breaks-table th { background: #2d3748; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #a0aec0; }
+    .breaks-table td { padding: 10px 14px; font-size: 13px; border-top: 1px solid #2d3748; font-variant-numeric: tabular-nums; }
+    .breaks-table tr:hover td { background: #1e2538; }
+
+    .run-btn { margin: 0 24px 24px; padding: 10px 24px; background: #3182ce; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .run-btn:hover { background: #2b6cb0; }
+    .run-btn:disabled { background: #4a5568; cursor: not-allowed; }
+
+    .last-updated { padding: 0 24px 8px; font-size: 12px; color: #718096; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>price-recon</h1>
+    <span>EOD Pricing Reconciliation Engine</span>
+    <span id="run-time" style="margin-left: auto;"></span>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Total Breaks</h3>
+      <div class="value" id="total-breaks">—</div>
+    </div>
+    <div class="card">
+      <h3>Critical</h3>
+      <div class="value critical" id="critical-breaks">—</div>
+    </div>
+    <div class="card">
+      <h3>Warning</h3>
+      <div class="value warning" id="warning-breaks">—</div>
+    </div>
+    <div class="card">
+      <h3>Sources Active</h3>
+      <div class="value ok">3</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-card">
+      <h3>Breaks by Asset Class</h3>
+      <canvas id="assetChart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Severity Distribution</h3>
+      <canvas id="severityChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <div style="padding: 0 24px 8px; display: flex; gap: 12px; align-items: center;">
+    <button class="run-btn" id="run-btn" onclick="triggerRun()">Run Reconciliation</button>
+    <span class="last-updated" id="last-updated"></span>
+  </div>
+
+  <div class="breaks-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Severity</th><th>Ticker</th><th>Asset Class</th>
+          <th>Source A</th><th>Source B</th><th>Price A</th><th>Price B</th>
+          <th>Diff %</th><th>Cause</th>
+        </tr>
+      </thead>
+      <tbody id="breaks-body"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API = '';
+    let assetChart, severityChart;
+
+    async function loadBreaks() {
+      const [breaksRes, summaryRes] = await Promise.all([
+        fetch(`${API}/api/breaks`),
+        fetch(`${API}/api/breaks/summary`)
+      ]);
+      const breaks = await breaksRes.json();
+      const summary = await summaryRes.json();
+      renderSummary(breaks);
+      renderCharts(summary);
+      renderTable(breaks);
+      document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+    }
+
+    function renderSummary(breaks) {
+      document.getElementById('total-breaks').textContent = breaks.length;
+      document.getElementById('critical-breaks').textContent = breaks.filter(b => b.severity === 'CRITICAL').length;
+      document.getElementById('warning-breaks').textContent = breaks.filter(b => b.severity === 'WARNING').length;
+    }
+
+    function renderCharts(summary) {
+      const assetClasses = Object.keys(summary);
+      const criticals = assetClasses.map(ac => (summary[ac].CRITICAL || 0));
+      const warnings  = assetClasses.map(ac => (summary[ac].WARNING  || 0));
+
+      if (assetChart) assetChart.destroy();
+      assetChart = new Chart(document.getElementById('assetChart'), {
+        type: 'bar',
+        data: {
+          labels: assetClasses,
+          datasets: [
+            { label: 'Critical', data: criticals, backgroundColor: '#fc8181' },
+            { label: 'Warning',  data: warnings,  backgroundColor: '#f6ad55' },
+          ]
+        },
+        options: {
+          plugins: { legend: { labels: { color: '#e2e8f0' } } },
+          scales: {
+            x: { ticks: { color: '#a0aec0' }, grid: { color: '#2d3748' } },
+            y: { ticks: { color: '#a0aec0' }, grid: { color: '#2d3748' }, beginAtZero: true }
+          }
+        }
+      });
+
+      const total = assetClasses.reduce((s, ac) => s + Object.values(summary[ac]).reduce((a,b) => a+b, 0), 0);
+      const crit  = assetClasses.reduce((s, ac) => s + (summary[ac].CRITICAL || 0), 0);
+      const warn  = assetClasses.reduce((s, ac) => s + (summary[ac].WARNING  || 0), 0);
+      const info  = total - crit - warn;
+
+      if (severityChart) severityChart.destroy();
+      severityChart = new Chart(document.getElementById('severityChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Critical', 'Warning', 'Info'],
+          datasets: [{ data: [crit, warn, info], backgroundColor: ['#fc8181', '#f6ad55', '#63b3ed'] }]
+        },
+        options: {
+          plugins: { legend: { labels: { color: '#e2e8f0' } } }
+        }
+      });
+    }
+
+    function renderTable(breaks) {
+      const tbody = document.getElementById('breaks-body');
+      tbody.innerHTML = breaks.map(b => `
+        <tr>
+          <td><span class="badge ${b.severity.toLowerCase()}">${b.severity}</span></td>
+          <td><strong>${b.ticker}</strong></td>
+          <td>${b.asset_class}</td>
+          <td>${b.source_a}</td>
+          <td>${b.source_b}</td>
+          <td>${b.price_a}</td>
+          <td>${b.price_b}</td>
+          <td>${b.diff_pct.toFixed(3)}%</td>
+          <td>${b.break_cause}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function triggerRun() {
+      const btn = document.getElementById('run-btn');
+      btn.disabled = true;
+      btn.textContent = 'Running…';
+      try {
+        await fetch(`${API}/api/run`, { method: 'POST' });
+        await loadBreaks();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Run Reconciliation';
+      }
+    }
+
+    loadBreaks();
+    setInterval(loadBreaks, 60000); // refresh every minute
+  </script>
+</body>
+</html>

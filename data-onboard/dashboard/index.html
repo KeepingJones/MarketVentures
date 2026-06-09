@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>data-onboard — Vendor Onboarding Pipeline</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; }
+    header { background: #1a1f2e; border-bottom: 1px solid #2d3748; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header span { font-size: 12px; color: #718096; }
+
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 24px; }
+    .card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; }
+    .card h3 { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .card .value { font-size: 32px; font-weight: 700; }
+    .card .value.green { color: #68d391; }
+    .card .value.amber { color: #f6ad55; }
+    .card .value.red { color: #fc8181; }
+
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .badge.pass    { background: #1c4532; color: #68d391; }
+    .badge.fail    { background: #742a2a; color: #fc8181; }
+    .badge.pending { background: #2d3748; color: #a0aec0; }
+    .badge.in_progress { background: #1a365d; color: #63b3ed; }
+
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 24px 24px; }
+    .chart-card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; }
+    .chart-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+
+    .section { padding: 0 24px 24px; }
+    .section h2 { font-size: 13px; font-weight: 600; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+
+    table { width: 100%; border-collapse: collapse; background: #1a1f2e; border-radius: 8px; overflow: hidden; }
+    th { background: #2d3748; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #a0aec0; }
+    td { padding: 10px 14px; font-size: 13px; border-top: 1px solid #2d3748; }
+    tr:hover td { background: #1e2538; }
+
+    .pipeline-bar { display: flex; gap: 4px; padding: 0 24px 24px; flex-wrap: wrap; }
+    .stage-chip { padding: 6px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; background: #2d3748; color: #718096; border: 2px solid transparent; }
+    .stage-chip.active { background: #1a365d; color: #63b3ed; border-color: #3182ce; }
+    .stage-chip.done { background: #1c4532; color: #68d391; border-color: #38a169; }
+    .stage-chip.failed { background: #742a2a; color: #fc8181; border-color: #e53e3e; }
+
+    .btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-sm { background: #2d3748; color: #e2e8f0; }
+    .btn-sm:hover { background: #4a5568; }
+    .btn-primary { background: #3182ce; color: white; }
+    .btn-primary:hover { background: #2b6cb0; }
+    .btn-primary:disabled { background: #4a5568; cursor: not-allowed; }
+    .actions { padding: 0 24px 16px; display: flex; gap: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>data-onboard</h1>
+    <span>Vendor Data Onboarding Pipeline</span>
+    <span id="last-updated" style="margin-left: auto; font-size: 11px;"></span>
+  </header>
+
+  <div class="grid">
+    <div class="card"><h3>Total Vendors</h3><div class="value" id="total-vendors">—</div></div>
+    <div class="card"><h3>In Progress</h3><div class="value amber" id="in-progress">—</div></div>
+    <div class="card"><h3>Go-Live Ready</h3><div class="value green" id="go-live">—</div></div>
+    <div class="card"><h3>QA Failed</h3><div class="value red" id="qa-failed">—</div></div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-card">
+      <h3>Vendors by Pipeline Stage</h3>
+      <canvas id="stageChart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Alt Data Signals Extracted</h3>
+      <canvas id="altChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="score-btn" onclick="runAltData()">Process Alt Data Files</button>
+  </div>
+
+  <div class="section">
+    <h2>Vendor Pipeline</h2>
+    <table>
+      <thead>
+        <tr><th>Vendor</th><th>Pipeline Stage</th><th>Stage Status</th><th>Asset Classes</th><th>Updated</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="vendor-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Recent Alt Data Signals</h2>
+    <table>
+      <thead>
+        <tr><th>Source File</th><th>Ticker</th><th>Sentiment</th><th>Revenue Guidance</th><th>EPS</th><th>Confidence</th><th>Extracted</th></tr>
+      </thead>
+      <tbody id="alt-tbody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API = '';
+    let stageChart, altChart;
+    const STAGES = ['intake','gap_analysis','legal_check','tech_spec','qa_period','go_live'];
+
+    function stageColor(s) {
+      const map = { intake:'#63b3ed', gap_analysis:'#b794f4', legal_check:'#f6ad55',
+                    tech_spec:'#fc8181', qa_period:'#68d391', go_live:'#38a169' };
+      return map[s] || '#718096';
+    }
+
+    function sentimentBadge(s) {
+      const map = { bullish:'#68d391', bearish:'#fc8181', neutral:'#f6ad55' };
+      return `<span style="color:${map[s]||'#a0aec0'};font-weight:700">${s||'—'}</span>`;
+    }
+
+    async function load() {
+      const [vendorsRes, altRes] = await Promise.all([
+        fetch(`${API}/api/vendors`),
+        fetch(`${API}/api/alt-data/signals?limit=10`),
+      ]);
+      const vendors = await vendorsRes.json();
+      const altSignals = await altRes.json();
+
+      document.getElementById('total-vendors').textContent = vendors.length;
+      document.getElementById('in-progress').textContent = vendors.filter(v => v.current_stage !== 'go_live' && v.stage_status !== 'fail').length;
+      document.getElementById('go-live').textContent = vendors.filter(v => v.current_stage === 'go_live').length;
+      document.getElementById('qa-failed').textContent = vendors.filter(v => v.stage_status === 'fail').length;
+
+      // Stage distribution chart
+      const stageCounts = {};
+      STAGES.forEach(s => stageCounts[s] = 0);
+      vendors.forEach(v => { stageCounts[v.current_stage] = (stageCounts[v.current_stage] || 0) + 1; });
+      if (stageChart) stageChart.destroy();
+      stageChart = new Chart(document.getElementById('stageChart'), {
+        type: 'bar',
+        data: {
+          labels: STAGES,
+          datasets: [{ label: 'Vendors', data: STAGES.map(s => stageCounts[s]),
+            backgroundColor: STAGES.map(s => stageColor(s)) }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#a0aec0', font: {size: 10} }, grid: { color: '#2d3748' } },
+            y: { ticks: { color: '#a0aec0' }, grid: { color: '#2d3748' }, beginAtZero: true }
+          }
+        }
+      });
+
+      // Alt signals chart (by sentiment)
+      const sentimentCounts = { bullish: 0, bearish: 0, neutral: 0 };
+      altSignals.forEach(s => { sentimentCounts[s.sentiment] = (sentimentCounts[s.sentiment] || 0) + 1; });
+      if (altChart) altChart.destroy();
+      altChart = new Chart(document.getElementById('altChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Bullish', 'Bearish', 'Neutral'],
+          datasets: [{ data: [sentimentCounts.bullish, sentimentCounts.bearish, sentimentCounts.neutral],
+            backgroundColor: ['#68d391', '#fc8181', '#f6ad55'] }]
+        },
+        options: { plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+      });
+
+      // Vendor table
+      const vtbody = document.getElementById('vendor-tbody');
+      vtbody.innerHTML = vendors.map(v => `<tr>
+        <td><strong>${v.vendor_name}</strong><br><span style="font-size:11px;color:#718096">${v.vendor_id}</span></td>
+        <td>${v.current_stage}</td>
+        <td><span class="badge ${v.stage_status}">${v.stage_status}</span></td>
+        <td style="font-size:11px;color:#718096">${(v.claimed_asset_classes||[]).join(', ')}</td>
+        <td style="font-size:11px;color:#718096">${(v.updated_at||'').substring(0,16)}</td>
+        <td><button class="btn btn-sm" onclick="runQA('${v.vendor_id}')">Run QA</button></td>
+      </tr>`).join('');
+
+      // Alt data table
+      const atbody = document.getElementById('alt-tbody');
+      atbody.innerHTML = altSignals.map(s => `<tr>
+        <td style="font-size:11px">${s.source_file}</td>
+        <td><strong>${s.ticker||'—'}</strong></td>
+        <td>${sentimentBadge(s.sentiment)}</td>
+        <td style="font-size:11px;color:#a0aec0">${s.revenue_guidance||'—'}</td>
+        <td style="font-size:11px;color:#a0aec0">${s.earnings_surprise||'—'}</td>
+        <td>${s.confidence != null ? (s.confidence*100).toFixed(0)+'%' : '—'}</td>
+        <td style="font-size:11px;color:#718096">${(s.extracted_at||'').substring(0,16)}</td>
+      </tr>`).join('');
+
+      document.getElementById('last-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+    }
+
+    async function runQA(vendorId) {
+      await fetch(`${API}/api/vendors/${vendorId}/qa`, { method: 'POST' });
+      await load();
+    }
+
+    async function runAltData() {
+      const btn = document.getElementById('score-btn');
+      btn.disabled = true; btn.textContent = 'Processing…';
+      try {
+        await fetch(`${API}/api/alt-data/process`, { method: 'POST' });
+        await load();
+      } finally { btn.disabled = false; btn.textContent = 'Process Alt Data Files'; }
+    }
+
+    load();
+    setInterval(load, 60000);
+  </script>
+</body>
+</html>

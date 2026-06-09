@@ -1,0 +1,12 @@
+﻿.env
+*.db
+__pycache__/
+*.pyc
+.venv/
+venv/
+reports/output/
+*.xlsx
+*.pdf
+*.log
+.DS_Store
+
