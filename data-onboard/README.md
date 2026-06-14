@@ -2,72 +2,121 @@
 
 **Business problem:** Onboarding a new data vendor is 8 weeks of email chains with no structured process. Things fall through the cracks at go-live. A vendor passes legal but fails the technical integration. Another passes technical but has poor data quality that only shows up in production.
 
-`data-onboard` formalises this into a structured pipeline: intake → coverage gap analysis → legal/compliance check → technical spec → QA period → go-live sign-off.
-
----
-
-## Vault plan
-
-Full spec: `C:\Users\ewanj\AI Context\AI Context\Job-Hunt\master-plan.md` (Project 4)
-Portfolio plan: `C:\Users\ewanj\AI Context\AI Context\Job-Hunt\portfolio-plan.md`
-
----
-
-## How it links to the other projects
-
-```
-price-recon      → demonstrates the problem this solves (bad data = breaks)
-market-data-hub  → vendors approved here get added to the catalogue there
-alpha-pipeline   → new data sources flow in via this pipeline
-data-onboard     ← YOU ARE HERE — vendor onboarding workflow
-market-ops       → vendor SLA tracker reads onboarding status
-```
-
-Shared database: `C:\Users\ewanj\fund.db` — vendor pipeline state written here.
+`data-onboard` formalises this into a 6-stage structured pipeline: intake → coverage gap analysis → legal/compliance check → tech spec → 30-day QA period → go-live sign-off. Vendors that don't meet QA thresholds don't go live.
 
 ---
 
 ## What it demonstrates
 
-- **Structured pipeline** — intake → gap analysis → legal check → tech spec → QA → go-live
-- **Live QA module** — connects to the actual vendor API at intake, runs 30-day quality assessment (completeness, freshness, accuracy vs benchmark)
-- **OpenFIGI validation** — maps vendor identifiers to Bloomberg FIGIs, catches mapping mismatches before production (https://openfigi.com/api)
-- **Coverage gap analysis** — compares new vendor against existing catalogue from market-data-hub
-- **Liquidity data assessment** — does vendor provide bid-ask, volume, depth?
-- **Risk data assessment** — does vendor cover VaR inputs, stress scenarios, Greeks?
-- **FX coverage check** — does vendor provide GBP cross rates, forward points?
-- **LLM spec generation** — auto-produces integration specification document from intake form via Ollama
-- **Unstructured Alternative Data Ingestion** — dedicated pipeline that takes a PDF (earnings transcript, SEC filing, research report) and uses an LLM to extract a structured JSON signal: `{"sentiment": "bearish", "revenue_guidance": "lowered", "ticker": "AAPL"}`. Operationalises unstructured alpha sources — the kind of data that actually generates edge.
-- **Status dashboard** — pipeline view of all vendors in onboarding
+- **6-stage onboarding pipeline** — each stage has a pass/fail gate with audit trail in `fund.db`
+- **Coverage gap analysis** — new vendors checked against existing catalogue; "low value add" recommendation if all asset classes are already covered
+- **OpenFIGI identifier mapping** — vendor tickers resolved to Bloomberg FIGIs (openfigi.com free API), flagging unresolvable instruments before go-live
+- **LLM integration spec generation** — Ollama generates a structured integration document (vendor overview, API auth, data format, testing plan, go-live checklist) from the intake form
+- **30-day QA assessment** — measures completeness (≥95%), latency (≤30 min), accuracy vs Yahoo benchmark (≥99%); simulated mode for demo vendors
+- **Alt data ingestion pipeline** — PDF documents (earnings transcripts, SEC filings, research reports) → LLM extraction → structured JSON signal output (`ticker`, `sentiment`, `revenue_guidance`, `earnings_surprise`, `confidence`)
+- **Pipeline stage audit log** — every stage transition recorded with timestamp, outcome, and notes
+
+---
+
+## Pipeline stages
+
+```
+Vendor submits intake form
+         │
+    [1] intake ──────────────────── validate required fields
+         │
+    [2] gap_analysis ─────────────── coverage vs existing catalogue
+         │                           → proceed / low_value_add
+    [3] legal_check ──────────────── licence type, GDPR, redistribution rights
+         │
+    [4] tech_spec ────────────────── LLM-generated integration document
+         │
+    [5] qa_period ────────────────── 30-day live assessment:
+         │                             completeness ≥ 95%
+         │                             latency ≤ 30 min
+         │                             accuracy ≥ 99%
+         │
+    [6] go_live ──────────────────── sign-off → add to market-data-hub catalogue
+```
+
+---
+
+## QA thresholds
+
+| Metric | Pass threshold | Why |
+|---|---|---|
+| Completeness | ≥ 95% fields populated | Sparse data breaks VaR inputs silently |
+| Latency | ≤ 30 min stale | EOD risk run requires same-day prices |
+| Accuracy | ≥ 99% vs benchmark | >1% deviation invalidates stress tests |
 
 ---
 
 ## Acceptance criteria
 
-- [ ] Full pipeline with 5+ stages and stage-gating
-- [ ] Live QA module connects to real API and produces quality report
-- [ ] OpenFIGI identifier validation working
-- [ ] Coverage gap analysis against market-data-hub catalogue
-- [ ] LLM-generated integration spec document
-- [ ] Status dashboard showing all vendors in pipeline
+- [x] 6-stage pipeline with stage gate logic
+- [x] Intake validation (all required fields enforced)
+- [x] Coverage gap analysis vs existing catalogue
+- [x] OpenFIGI ticker → FIGI resolution (batched, 10 per request)
+- [x] LLM integration spec via Ollama
+- [x] 30-day QA assessment with pass/fail thresholds
+- [x] Alt data extraction pipeline (PDF → LLM → structured JSON)
+- [x] All stages logged in shared fund.db with audit trail
 
 ---
 
 ## Quick start
 
 ```bash
-cd C:\Users\ewanj\data-onboard
-python -m venv .venv && .venv\Scripts\activate
+# 1. Clone and set up
+git clone https://github.com/KeepingJones/MarketVentures.git
+cd MarketVentures/data-onboard
 pip install -r requirements.txt
-python -c "from db.database import init_db; init_db()"
+
+# 2. Configure environment
+cp .env.example .env
+# Edit .env — OPENFIGI_API_KEY is optional (free tier works without it)
+
+# 3. Start API
 python main.py
 # Dashboard: http://localhost:8003
+
+# 4. Submit a vendor for onboarding (example)
+curl -X POST http://localhost:8003/api/onboard \
+  -H "Content-Type: application/json" \
+  -d '{"vendor_name":"Acme Data","vendor_id":"acme","contact_email":"data@acme.com","api_endpoint":"https://api.acme.com","asset_classes":["equity","crypto"]}'
 ```
+
+---
+
+## Running tests
+
+```bash
+cd MarketVentures/data-onboard
+python -m pytest tests/ -v
+```
+
+Tests cover intake validation, gap analysis logic, QA threshold pass/fail criteria, pipeline stage ordering, and alt data schema shape.
+
+---
+
+## Safety
+
+`PAPER_TRADE_MODE = True` hardcoded in `config.py`. Onboarding pipeline only — no order routing, no live capital.
+
+---
+
+## Part of the GBP fund portfolio ecosystem
+
+| # | Project | What it adds |
+|---|---|---|
+| 1 | price-recon | Price validation, break detection, EOD Excel reporting |
+| 2 | market-data-hub | Data catalogue, vendor registry, quality scoring |
+| 3 | alpha-pipeline | Signal generation, risk, FX hedging, paper execution |
+| 4 | **data-onboard** (this) | Vendor onboarding workflow, coverage gap analysis |
+| 5 | market-ops | Unified operations dashboard, stakeholder PDF report |
 
 ---
 
 ## Stack
 
-Python · FastAPI · SQLite (shared fund.db) · React · Ollama · yfinance · Alpha Vantage · fredapi · OpenFIGI API
-
-**Depends on:** market-data-hub (catalogue for gap analysis)
+Python · FastAPI · SQLite (shared fund.db) · OpenFIGI API · Ollama · yfinance

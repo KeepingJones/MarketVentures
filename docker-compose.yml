@@ -1,0 +1,88 @@
+services:
+  price-recon:
+    build:
+      context: ./price-recon
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - fund-db:/data
+    environment:
+      - SHARED_DB_PATH=/data/fund.db
+      - DB_PATH=/data/fund.db
+    env_file:
+      - ./price-recon/.env
+    depends_on: []
+
+  market-data-hub:
+    build:
+      context: ./market-data-hub
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      - fund-db:/data
+    environment:
+      - SHARED_DB_PATH=/data/fund.db
+    env_file:
+      - ./market-data-hub/.env
+    depends_on:
+      - price-recon
+
+  alpha-pipeline:
+    build:
+      context: ./alpha-pipeline
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    volumes:
+      - fund-db:/data
+    environment:
+      - SHARED_DB_PATH=/data/fund.db
+      - DB_PATH=/data/fund.db
+    env_file:
+      - ./alpha-pipeline/.env
+    depends_on:
+      - price-recon
+      - market-data-hub
+
+  data-onboard:
+    build:
+      context: ./data-onboard
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    volumes:
+      - fund-db:/data
+    environment:
+      - SHARED_DB_PATH=/data/fund.db
+    env_file:
+      - ./data-onboard/.env
+    depends_on:
+      - market-data-hub
+
+  market-ops:
+    build:
+      context: ./market-ops
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    volumes:
+      - fund-db:/data
+    environment:
+      - SHARED_DB_PATH=/data/fund.db
+      - PRICE_RECON_API=http://price-recon:8000
+      - MARKET_DATA_HUB_API=http://market-data-hub:8001
+      - ALPHA_PIPELINE_API=http://alpha-pipeline:8501
+      - DATA_ONBOARD_API=http://data-onboard:8003
+    env_file:
+      - ./market-ops/.env
+    depends_on:
+      - price-recon
+      - market-data-hub
+      - alpha-pipeline
+      - data-onboard
+
+volumes:
+  fund-db:
+    driver: local

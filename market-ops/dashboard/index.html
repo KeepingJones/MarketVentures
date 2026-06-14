@@ -133,9 +133,27 @@
 
     <div class="header">
         <h1>MarketOps Live Dashboard</h1>
-        <div>
+        <div style="display:flex; align-items:center; gap:16px;">
+            <nav style="display:flex; gap:10px; font-size:12px;">
+                <a href="http://localhost:8000" target="_blank"
+                   style="color:var(--accent-green); text-decoration:none; padding:4px 10px; border:1px solid var(--border-color); border-radius:4px;">
+                   price-recon :8000
+                </a>
+                <a href="http://localhost:8001" target="_blank"
+                   style="color:var(--accent-green); text-decoration:none; padding:4px 10px; border:1px solid var(--border-color); border-radius:4px;">
+                   market-data-hub :8001
+                </a>
+                <a href="http://localhost:8501" target="_blank"
+                   style="color:var(--accent-green); text-decoration:none; padding:4px 10px; border:1px solid var(--border-color); border-radius:4px;">
+                   alpha-pipeline :8501
+                </a>
+                <a href="http://localhost:8003" target="_blank"
+                   style="color:var(--accent-green); text-decoration:none; padding:4px 10px; border:1px solid var(--border-color); border-radius:4px;">
+                   data-onboard :8003
+                </a>
+            </nav>
             <span id="connection-status" class="status-badge">● LIVE</span>
-            <span id="last-update" style="margin-left: 10px; color: var(--text-muted); font-size: 12px;">Waiting for data...</span>
+            <span id="last-update" style="color: var(--text-muted); font-size: 12px;">Waiting for data...</span>
         </div>
     </div>
 

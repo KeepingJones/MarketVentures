@@ -19,6 +19,7 @@ from db.database import (
     get_positions, get_nav_gbp, get_latest_snapshot,
     get_snapshot_history, get_signals, get_trades, get_active_forwards,
 )
+from risk.performance import performance_summary
 
 st.set_page_config(
     page_title="alpha-pipeline — Paper Portfolio",
@@ -39,10 +40,11 @@ def load_data():
     trades = get_trades(limit=20)
     forwards = get_active_forwards()
     history = get_snapshot_history(limit=30)
-    return positions, nav, snapshot, signals, trades, forwards, history
+    perf = performance_summary(history)
+    return positions, nav, snapshot, signals, trades, forwards, history, perf
 
 
-positions, nav, snapshot, signals, trades, forwards, history = load_data()
+positions, nav, snapshot, signals, trades, forwards, history, perf = load_data()
 
 # ── Summary metrics ───────────────────────────────────────────────────────────
 col1, col2, col3, col4, col5 = st.columns(5)
@@ -63,6 +65,28 @@ with col4:
     st.metric("Open Breaks", open_breaks, delta_color="inverse")
 with col5:
     st.metric("Positions", len(positions))
+
+st.divider()
+
+# ── Performance attribution ───────────────────────────────────────────────────
+pa1, pa2, pa3, pa4, pa5 = st.columns(5)
+with pa1:
+    sharpe = perf["sharpe"]
+    st.metric("Sharpe (ann.)", f"{sharpe:.2f}" if sharpe is not None else "—",
+              help="Annualised Sharpe ratio vs SONIA (5.2%). Needs ≥2 snapshots.")
+with pa2:
+    sortino = perf["sortino"]
+    st.metric("Sortino (ann.)", f"{sortino:.2f}" if sortino is not None else "—",
+              help="Annualised Sortino ratio — penalises downside vol only.")
+with pa3:
+    cagr = perf["cagr_pct"]
+    st.metric("CAGR", f"{cagr:.1f}%" if cagr is not None else "—",
+              help="Compound annual growth rate extrapolated from snapshot history.")
+with pa4:
+    tot = perf["total_return_pct"]
+    st.metric("Total Return", f"{tot:+.2f}%" if tot else "0.00%")
+with pa5:
+    st.metric("Days tracked", perf["n_days"])
 
 st.divider()
 

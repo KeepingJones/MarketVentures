@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-price-recon:
+    name: price-recon tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: price-recon/requirements.txt
+      - name: Install dependencies
+        run: pip install -r price-recon/requirements.txt
+      - name: Run tests
+        working-directory: price-recon
+        run: python -m pytest tests/ -v --tb=short
+
+  test-alpha-pipeline:
+    name: alpha-pipeline tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: alpha-pipeline/requirements.txt
+      - name: Install dependencies
+        run: pip install -r alpha-pipeline/requirements.txt
+      - name: Run tests
+        working-directory: alpha-pipeline
+        run: python -m pytest tests/ -v --tb=short
+
+  test-market-data-hub:
+    name: market-data-hub tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: market-data-hub/requirements.txt
+      - name: Install dependencies
+        run: pip install -r market-data-hub/requirements.txt
+      - name: Run tests
+        working-directory: market-data-hub
+        run: python -m pytest tests/ -v --tb=short
+
+  test-data-onboard:
+    name: data-onboard tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: data-onboard/requirements.txt
+      - name: Install dependencies
+        run: pip install -r data-onboard/requirements.txt
+      - name: Run tests
+        working-directory: data-onboard
+        run: python -m pytest tests/ -v --tb=short
+
+  test-market-ops:
+    name: market-ops tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: market-ops/requirements.txt
+      - name: Install dependencies
+        run: pip install -r market-ops/requirements.txt
+      - name: Run tests
+        working-directory: market-ops
+        run: python -m pytest tests/ -v --tb=short

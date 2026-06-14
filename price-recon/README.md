@@ -22,20 +22,21 @@
 ## Architecture
 
 ```
-Live data sources                   Reconciliation engine          Outputs
-─────────────────────               ──────────────────────         ────────
+Live data sources                   Reconciliation engine                 Outputs
+─────────────────────               ──────────────────────                ────────
 Yahoo Finance (yfinance)  ──┐
-FRED (fredapi)            ──┤──► data/sources/  ──► recon/engine.py ──► db/  ──► api/
+FRED (fredapi)            ──┤──► data/sources/  ──► recon/engine.py ──► db/ ──► api/
 ECB REST API              ──┤       │                     │
-Alpha Vantage             ──┘       └── data/models.py    └── recon/classifier.py
-                                                          └── recon/liquidity.py
-                                                          └── recon/escalation.py
-
-                                                                         │
-                                                              ┌──────────┴──────────┐
-                                                         reports/          dashboard/
-                                                        Excel EOD         Chart.js UI
+Bloomberg mock (B-PIPE)   ──┘       └── data/models.py    ├── recon/classifier.py
+                                                           ├── recon/liquidity.py
+                                                           └── recon/escalation.py
+                                                                          │
+                                                               ┌──────────┴──────────┐
+                                                          reports/          dashboard/
+                                                         Excel EOD         Chart.js UI
 ```
+
+> **Bloomberg note:** `data/sources/bloomberg_mock.py` simulates Bloomberg B-PIPE pricing with realistic field names (`PX_LAST`, `BID`, `ASK`, `CRNCY`). To wire in a real Bloomberg terminal: install `blpapi`, replace `_bloomberg_field_request()` with a live `BDP` call, and remove the Yahoo base-price lookup. The rest of the engine is unchanged.
 
 ---
 
@@ -68,21 +69,18 @@ Alpha Vantage             ──┘       └── data/models.py    └── 
 
 ```bash
 # 1. Clone and set up
-cd C:\Users\ewanj\price-recon
-python -m venv .venv
-.venv\Scripts\activate
+git clone https://github.com/KeepingJones/MarketVentures.git
+cd MarketVentures/price-recon
 pip install -r requirements.txt
 
-# 2. Environment — keys already copied from trading-bot
-#    FRED_API_KEY is pre-filled in .env
+# 2. Configure environment
+cp .env.example .env
+# Edit .env — add your FRED_API_KEY (free at fred.stlouisfed.org)
 
-# 3. Initialise database
-python -c "from db.database import init_db; init_db()"
-
-# 4. Run reconciliation
+# 3. Run reconciliation (fetches live prices, classifies breaks, saves to fund.db)
 python main.py
 
-# 5. Start API + dashboard
+# 4. Start API + dashboard
 uvicorn api.routes:app --reload
 # Open http://localhost:8000
 ```

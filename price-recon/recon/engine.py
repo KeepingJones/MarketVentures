@@ -13,6 +13,7 @@ from data.models import PriceQuote, PriceBreak
 from data.sources.yahoo import get_bulk_quotes
 from data.sources.fred import get_all_quotes
 from data.sources.ecb import get_fx_rates
+from data.sources.bloomberg_mock import get_bloomberg_quotes
 from recon.classifier import classify_break
 from recon.liquidity import get_liquidity_tier, get_tolerance_for_tier
 
@@ -42,6 +43,12 @@ class ReconEngine:
         # ECB — secondary source for EUR FX rates (cross-checks Yahoo FX)
         ecb_quotes = get_fx_rates()
         for q in ecb_quotes:
+            self._quotes.setdefault(q.ticker, []).append(q)
+
+        # Bloomberg mock — simulates B-PIPE/BLPAPI third-source validation
+        # In production: replace with real blpapi.Session() subscription
+        bloomberg_quotes = get_bloomberg_quotes(INSTRUMENTS)
+        for q in bloomberg_quotes:
             self._quotes.setdefault(q.ticker, []).append(q)
 
         logger.info(
