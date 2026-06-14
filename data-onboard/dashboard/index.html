@@ -153,14 +153,14 @@
       });
 
       // Alt signals chart (by sentiment)
-      const sentimentCounts = { bullish: 0, bearish: 0, neutral: 0 };
-      altSignals.forEach(s => { sentimentCounts[s.sentiment] = (sentimentCounts[s.sentiment] || 0) + 1; });
+      const sentimentCounts = { Bullish: 0, Bearish: 0, Neutral: 0 };
+      altSignals.forEach(s => { const k = s.sentiment; sentimentCounts[k] = (sentimentCounts[k] || 0) + 1; });
       if (altChart) altChart.destroy();
       altChart = new Chart(document.getElementById('altChart'), {
         type: 'doughnut',
         data: {
           labels: ['Bullish', 'Bearish', 'Neutral'],
-          datasets: [{ data: [sentimentCounts.bullish, sentimentCounts.bearish, sentimentCounts.neutral],
+          datasets: [{ data: [sentimentCounts.Bullish, sentimentCounts.Bearish, sentimentCounts.Neutral],
             backgroundColor: ['#68d391', '#fc8181', '#f6ad55'] }]
         },
         options: { plugins: { legend: { labels: { color: '#e2e8f0' } } } }

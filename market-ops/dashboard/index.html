@@ -224,7 +224,7 @@
         }
 
         function formatPct(n) {
-            return Number(n * 100).toFixed(2) + '%';
+            return Number(n).toFixed(2) + '%';
         }
 
         const ws = new WebSocket(`ws://${window.location.host}/ws/live`);
