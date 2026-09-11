@@ -2,8 +2,7 @@
 market-ops — Live Market Data Operations Dashboard
 Project 5 of 5 in the GBP fund portfolio ecosystem.
 
-Plan: C:\\Users\\ewanj\\AI Context\\AI Context\\Job-Hunt\\master-plan.md
-Shared DB: C:\\Users\\ewanj\\fund.db (read-only — aggregation layer only)
+Shared DB: ./fund.db (read-only — aggregation layer only)
 
 Reads from all 4 upstream projects via shared DB + REST APIs:
   price-recon     → http://localhost:8000  (breaks)

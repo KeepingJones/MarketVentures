@@ -2,8 +2,7 @@
 market-data-hub — Market Data Management Platform
 Project 2 of 5 in the GBP fund portfolio ecosystem.
 
-Plan: C:\\Users\\ewanj\\AI Context\\AI Context\\Job-Hunt\\master-plan.md
-Shared DB: C:\\Users\\ewanj\\fund.db
+Shared DB: ./fund.db
 
 Run modes:
   python main.py          — seed vendors + catalogue, start API

@@ -2,8 +2,7 @@
 data-onboard — Vendor Data Onboarding & Integration Workflow
 Project 4 of 5 in the GBP fund portfolio ecosystem.
 
-Plan: C:\\Users\\ewanj\\AI Context\\AI Context\\Job-Hunt\\master-plan.md
-Shared DB: C:\\Users\\ewanj\\fund.db
+Shared DB: ./fund.db
 
 Run modes:
   python main.py               — start API + status dashboard

@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_PATH = Path(os.getenv("DB_PATH", r"C:\Users\ewanj\MarketVentures\fund.db"))
+ROOT_DIR = Path(__file__).resolve().parent.parent
+DB_PATH = Path(os.getenv("DB_PATH", str(ROOT_DIR / "fund.db")))
 REPORT_OUTPUT_DIR = Path(os.getenv("REPORT_OUTPUT_DIR", "./reports/output"))
 FUND_BASE_CURRENCY = os.getenv("FUND_BASE_CURRENCY", "GBP")
 FRED_API_KEY = os.getenv("FRED_API_KEY", "")

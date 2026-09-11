@@ -33,9 +33,9 @@ MarketVentures/
 
 ## Shared database
 
-**Path:** `C:\Users\ewanj\MarketVentures\fund.db`
+**Path:** `./fund.db` (root of repository)
 
-Every project reads the path from `SHARED_DB_PATH` env var (set in each `.env`). Default fallback is the absolute path above.
+Every project reads the path from `SHARED_DB_PATH` env var (set in each `.env`). Default fallback is the root `./fund.db`.
 
 **Two-layer DB strategy:**
 - **SQLite** — all writes (quotes, breaks, positions, trades, events). Transactional, reliable.

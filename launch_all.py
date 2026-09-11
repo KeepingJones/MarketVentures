@@ -1,7 +1,7 @@
 """
 launch_all.py — Start all 5 MarketVentures services.
 
-Uses the shared .venv at C:/Users/ewanj/MarketVentures/.venv
+Uses the shared .venv in the repository root
 
 Services:
   price-recon     → http://localhost:8000

@@ -2,9 +2,7 @@
 alpha-pipeline — Live Multi-Asset Signal & Paper Trading Engine
 Project 3 of 5 in the GBP fund portfolio ecosystem.
 
-Plan: C:\\Users\\ewanj\\AI Context\\AI Context\\Job-Hunt\\master-plan.md
-Prior work to reuse: C:\\Users\\ewanj\\trading-bot
-Shared DB: C:\\Users\\ewanj\\fund.db
+Shared DB: ./fund.db
 
 PAPER_TRADE_MODE = True. No live capital. Ever.
 

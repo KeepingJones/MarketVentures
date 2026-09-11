@@ -148,4 +148,4 @@ cd market-ops && python -m pytest tests/ -v && cd ..
 
 ## Contact
 
-Ewan Jones · [ewanjk123@gmail.com](mailto:ewanjk123@gmail.com) · [github.com/KeepingJones](https://github.com/KeepingJones)
+[github.com/KeepingJones](https://github.com/KeepingJones)

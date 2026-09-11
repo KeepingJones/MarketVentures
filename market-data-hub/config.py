@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── Shared fund database — all 5 projects read/write here ────────────────────
-SHARED_DB_PATH = Path(os.getenv("SHARED_DB_PATH", r"C:\Users\ewanj\MarketVentures\fund.db"))
+ROOT_DIR = Path(__file__).resolve().parent.parent
+SHARED_DB_PATH = Path(os.getenv("SHARED_DB_PATH", str(ROOT_DIR / "fund.db")))
 
 FRED_API_KEY     = os.getenv("FRED_API_KEY", "")
 ALPHA_VANTAGE_KEY = os.getenv("ALPHA_VANTAGE_KEY", "")
@@ -14,10 +15,6 @@ OLLAMA_MODEL     = os.getenv("OLLAMA_MODEL", "phi3.5")
 
 PAPER_TRADE_MODE = True  # Data catalogue only — no order routing
 API_PORT         = int(os.getenv("API_PORT", "8001"))
-
-# ── Vault / plan reference ────────────────────────────────────────────────────
-VAULT_PLAN   = r"C:\Users\ewanj\AI Context\AI Context\Job-Hunt\master-plan.md"
-PORTFOLIO_PLAN = r"C:\Users\ewanj\AI Context\AI Context\Job-Hunt\portfolio-plan.md"
 
 # ── Vendor registry ───────────────────────────────────────────────────────────
 # Each entry defines a catalogued data vendor. Status: active | inactive | onboarding
