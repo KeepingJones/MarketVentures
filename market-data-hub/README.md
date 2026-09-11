@@ -1,22 +1,25 @@
 # market-data-hub — Market Data Management Platform
 
+![Market Data Hub Dashboard](docs/dashboard_preview.png)
+
 **Business problem:** No single view of what data the firm has, what it costs, who uses it, or whether it's any good. Vendor SLAs get missed. Data quality issues reach the trading desk. New vendor onboarding takes weeks with no structured process.
 
-`market-data-hub` is the data catalogue, vendor registry, quality scoring engine, and cost allocation dashboard — the system a Head of Market Data builds before anything else.
+
+`market-data-hub` is the data catalogue, vendor registry, quality scoring engine, and cost allocation dashboard â€” the system a Head of Market Data builds before anything else.
 
 ---
 
 ## What it demonstrates
 
-- **Vendor registry** — Yahoo Finance, FRED, ECB, Alpha Vantage, Bloomberg (mock): SLAs, cost, delivery method, asset class coverage
-- **Dataset catalogue** — 13 datasets tagged with quality score, coverage, frequency, and licence type
-- **Live quality scoring** — hits real APIs on schedule, measures freshness, completeness, and accuracy vs Yahoo benchmark; scores each vendor 0–100
-- **Usage tracking** — which desk (equity, FX, rates, credit, quant) pulls which datasets; recorded in shared `fund.db`
-- **Cost allocation** — vendor spend split proportionally across desks; the CFO's number
-- **Risk data flagging** — which datasets are on the critical risk path (VaR inputs, stress scenarios, Greeks) — highlighted red in the dashboard
-- **Entitlements engine** — licence gates: `display_only` / `derived_data` / `execution_licensed` / `internal_only` / `redistributable`. Desk entitlement matrix enforced per request. Blocks automated use of display-only data — the compliance failure that gets firms fined by the FCA/SEC
-- **LLM catalogue query** — natural language questions over the catalogue via Ollama (`phi3.5` by default); requires local Ollama install
-- **LLM RAG over vendor contracts** — keyword-ranked contract chunks fed to Ollama to answer "can we redistribute this to our offshore desk?" type questions
+- **Vendor registry** â€” Yahoo Finance, FRED, ECB, Alpha Vantage, Bloomberg (mock): SLAs, cost, delivery method, asset class coverage
+- **Dataset catalogue** â€” 13 datasets tagged with quality score, coverage, frequency, and licence type
+- **Live quality scoring** â€” hits real APIs on schedule, measures freshness, completeness, and accuracy vs Yahoo benchmark; scores each vendor 0â€“100
+- **Usage tracking** â€” which desk (equity, FX, rates, credit, quant) pulls which datasets; recorded in shared `fund.db`
+- **Cost allocation** â€” vendor spend split proportionally across desks; the CFO's number
+- **Risk data flagging** â€” which datasets are on the critical risk path (VaR inputs, stress scenarios, Greeks) â€” highlighted red in the dashboard
+- **Entitlements engine** â€” licence gates: `display_only` / `derived_data` / `execution_licensed` / `internal_only` / `redistributable`. Desk entitlement matrix enforced per request. Blocks automated use of display-only data â€” the compliance failure that gets firms fined by the FCA/SEC
+- **LLM catalogue query** â€” natural language questions over the catalogue via Ollama (`phi3.5` by default); requires local Ollama install
+- **LLM RAG over vendor contracts** â€” keyword-ranked contract chunks fed to Ollama to answer "can we redistribute this to our offshore desk?" type questions
 
 ---
 
@@ -24,13 +27,13 @@
 
 ```
 External APIs                  market-data-hub                       Outputs
-────────────                   ───────────────                       ───────
-Yahoo Finance  ──┐
-FRED           ──┤──► data/quality_scorer.py ──► db/database.py ──► fund.db
-ECB REST       ──┤         │                          │
-Alpha Vantage  ──┤     quality_scores            vendor_registry       │
-Bloomberg mock ──┘     usage_events              datasets          api/routes.py
-                                                 entitlement_checks    │
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                       â”€â”€â”€â”€â”€â”€â”€
+Yahoo Finance  â”€â”€â”
+FRED           â”€â”€â”¤â”€â”€â–º data/quality_scorer.py â”€â”€â–º db/database.py â”€â”€â–º fund.db
+ECB REST       â”€â”€â”¤         â”‚                          â”‚
+Alpha Vantage  â”€â”€â”¤     quality_scores            vendor_registry       â”‚
+Bloomberg mock â”€â”€â”˜     usage_events              datasets          api/routes.py
+                                                 entitlement_checks    â”‚
                                                                   dashboard/
                                                                  index.html (Chart.js)
                                                                  /api/query (Ollama)
@@ -54,13 +57,13 @@ Bloomberg mock ──┘     usage_events              datasets          api/rou
 
 | Desk | Display Only | Derived Data | Execution Licensed |
 |---|---|---|---|
-| Equity | ✓ | ✓ | ✓ |
-| FX | ✓ | ✓ | ✓ |
-| Rates | ✓ | ✓ | ✓ |
-| Credit | ✓ | ✓ | — |
-| Quant | ✓ | ✓ | ✓ |
-| Risk | ✓ | ✓ | — |
-| Operations | ✓ | — | — |
+| Equity | âœ“ | âœ“ | âœ“ |
+| FX | âœ“ | âœ“ | âœ“ |
+| Rates | âœ“ | âœ“ | âœ“ |
+| Credit | âœ“ | âœ“ | â€” |
+| Quant | âœ“ | âœ“ | âœ“ |
+| Risk | âœ“ | âœ“ | â€” |
+| Operations | âœ“ | â€” | â€” |
 
 ---
 
@@ -70,7 +73,7 @@ Bloomberg mock ──┘     usage_events              datasets          api/rou
 - [x] Usage tracking connected to shared fund.db
 - [x] Cost allocation dashboard showing spend per desk
 - [x] Risk data flagging (critical path datasets highlighted)
-- [x] Entitlement engine enforcing licence type × desk matrix
+- [x] Entitlement engine enforcing licence type Ã— desk matrix
 - [x] LLM query working over the catalogue
 - [x] Chart.js dashboard: quality bar chart, desk usage doughnut, vendor/dataset tables
 
@@ -86,7 +89,7 @@ pip install -r requirements.txt
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env — add FRED_API_KEY (free) and ALPHA_VANTAGE_KEY (free)
+# Edit .env â€” add FRED_API_KEY (free) and ALPHA_VANTAGE_KEY (free)
 
 # 3. Seed catalogue and start API
 python main.py
@@ -111,7 +114,7 @@ Tests cover quality scoring math, entitlement logic, vendor config completeness,
 
 ## Safety
 
-`PAPER_TRADE_MODE = True` hardcoded in `config.py`. Data catalogue only — no order routing, no live capital.
+`PAPER_TRADE_MODE = True` hardcoded in `config.py`. Data catalogue only â€” no order routing, no live capital.
 
 ---
 
@@ -129,4 +132,5 @@ Tests cover quality scoring math, entitlement logic, vendor config completeness,
 
 ## Stack
 
-Python · FastAPI · SQLite (shared fund.db) · Chart.js · Ollama · yfinance · fredapi
+Python Â· FastAPI Â· SQLite (shared fund.db) Â· Chart.js Â· Ollama Â· yfinance Â· fredapi
+

@@ -1,21 +1,24 @@
 # price-recon — EOD Pricing Reconciliation Engine
 
+![price-recon dashboard](docs/recon_preview.png)
+
 **Business problem:** At the end of every trading day, a market data team is handed hundreds of price discrepancies across a multi-asset book. Which price is right? Why did it break? Who owns the fix? Without a systematic answer to those questions, EOD NAV is late and risk is measured against the wrong prices.
 
-`price-recon` automates this — fetching live prices from multiple sources, classifying every break by root cause, and producing the Excel report the Head of Market Data actually reads.
+
+`price-recon` automates this â€” fetching live prices from multiple sources, classifying every break by root cause, and producing the Excel report the Head of Market Data actually reads.
 
 ---
 
 ## What it demonstrates
 
 - **Multi-source price validation** across equities, FX, government bonds, corporate bonds, credit spreads, commodity futures, and volatility indices
-- **Break classification by root cause** — stale price, source outage, corporate action, FX conversion artefact, spread within normal, data quality, genuine discrepancy
-- **Liquidity-adjusted tolerances** — L1 (large cap equities, benchmark FX) uses tight thresholds; L3 (illiquid credit, exotic FX) gets wider — same logic as production Bloomberg vs internal pricing systems
+- **Break classification by root cause** â€” stale price, source outage, corporate action, FX conversion artefact, spread within normal, data quality, genuine discrepancy
+- **Liquidity-adjusted tolerances** â€” L1 (large cap equities, benchmark FX) uses tight thresholds; L3 (illiquid credit, exotic FX) gets wider â€” same logic as production Bloomberg vs internal pricing systems
 - **FX rate monitoring** treated as severity-1: a stale GBP/USD marks the entire non-GBP book incorrectly
-- **GBP-denominated fund** — all breaks reported in GBP terms with FX contribution isolated
-- **Escalation routing** — critical breaks auto-escalated by asset class
-- **Excel EOD report** — automated via OpenPyXL, formatted for distribution to desk heads
-- **Live dashboard** — Chart.js, break summary by asset class, severity heatmap
+- **GBP-denominated fund** â€” all breaks reported in GBP terms with FX contribution isolated
+- **Escalation routing** â€” critical breaks auto-escalated by asset class
+- **Excel EOD report** â€” automated via OpenPyXL, formatted for distribution to desk heads
+- **Live dashboard** â€” Chart.js, break summary by asset class, severity heatmap
 
 ---
 
@@ -23,15 +26,15 @@
 
 ```
 Live data sources                   Reconciliation engine                 Outputs
-─────────────────────               ──────────────────────                ────────
-Yahoo Finance (yfinance)  ──┐
-FRED (fredapi)            ──┤──► data/sources/  ──► recon/engine.py ──► db/ ──► api/
-ECB REST API              ──┤       │                     │
-Bloomberg mock (B-PIPE)   ──┘       └── data/models.py    ├── recon/classifier.py
-                                                           ├── recon/liquidity.py
-                                                           └── recon/escalation.py
-                                                                          │
-                                                               ┌──────────┴──────────┐
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€               â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                â”€â”€â”€â”€â”€â”€â”€â”€
+Yahoo Finance (yfinance)  â”€â”€â”
+FRED (fredapi)            â”€â”€â”¤â”€â”€â–º data/sources/  â”€â”€â–º recon/engine.py â”€â”€â–º db/ â”€â”€â–º api/
+ECB REST API              â”€â”€â”¤       â”‚                     â”‚
+Bloomberg mock (B-PIPE)   â”€â”€â”˜       â””â”€â”€ data/models.py    â”œâ”€â”€ recon/classifier.py
+                                                           â”œâ”€â”€ recon/liquidity.py
+                                                           â””â”€â”€ recon/escalation.py
+                                                                          â”‚
+                                                               â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
                                                           reports/          dashboard/
                                                          Excel EOD         Chart.js UI
 ```
@@ -44,11 +47,11 @@ Bloomberg mock (B-PIPE)   ──┘       └── data/models.py    ├── 
 
 | Asset class | Sources | Tolerance | Liquidity tier |
 |---|---|---|---|
-| Equities | Yahoo Finance, Alpha Vantage | 50bp | L1–L3 by ADV |
+| Equities | Yahoo Finance, Alpha Vantage | 50bp | L1â€“L3 by ADV |
 | FX | Yahoo Finance, ECB | 10bp | L1 |
 | Government bonds | FRED, Yahoo Finance (ETF) | 5bp | L1 |
-| Corporate bonds | FRED ICE BofA spreads | 100bp | L2–L3 |
-| Commodity futures | Yahoo Finance | 100bp | L1–L2 |
+| Corporate bonds | FRED ICE BofA spreads | 100bp | L2â€“L3 |
+| Commodity futures | Yahoo Finance | 100bp | L1â€“L2 |
 | Volatility indices | Yahoo Finance (^VIX) | 200bp | L1 |
 
 ---
@@ -75,7 +78,7 @@ pip install -r requirements.txt
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env — add your FRED_API_KEY (free at fred.stlouisfed.org)
+# Edit .env â€” add your FRED_API_KEY (free at fred.stlouisfed.org)
 
 # 3. Run reconciliation (fetches live prices, classifies breaks, saves to fund.db)
 python main.py
@@ -89,7 +92,7 @@ uvicorn api.routes:app --reload
 
 ## Safety
 
-`PAPER_TRADE_MODE = True` is hardcoded in `config.py`. This project handles market data only — no order routing, no live capital.
+`PAPER_TRADE_MODE = True` is hardcoded in `config.py`. This project handles market data only â€” no order routing, no live capital.
 
 ---
 
@@ -104,3 +107,4 @@ price-recon is project 1 of 5, all sharing a common SQLite database.
 | 3 | alpha-pipeline | Signal generation, risk, FX hedging, paper execution |
 | 4 | data-onboard | Vendor onboarding workflow, coverage gap analysis |
 | 5 | market-ops | Unified operations dashboard, stakeholder PDF report |
+

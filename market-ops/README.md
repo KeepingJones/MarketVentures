@@ -1,22 +1,25 @@
 # market-ops — Live Market Data Operations Dashboard
 
+![market-ops dashboard](docs/market_ops_dashboard.png)
+
 **Business problem:** The Head of Market Data, COO, and CRO each need a different view of the same data — but there's no single system that shows feed health, risk exposure, liquidity profile, FX hedging status, and open price breaks in one place. The morning meeting runs on a PDF pulled together manually by someone who should be solving actual problems.
 
-`market-ops` is the unified operations dashboard that ties all four other projects together — reading from the shared `fund.db` to present a single view, and generating a formatted PDF stakeholder report at the press of a button.
+
+`market-ops` is the unified operations dashboard that ties all four other projects together â€” reading from the shared `fund.db` to present a single view, and generating a formatted PDF stakeholder report at the press of a button.
 
 ---
 
 ## What it demonstrates
 
-- **Unified aggregation** — reads from all 4 upstream projects' tables via shared SQLite (`fund.db`); market-ops is read-only except for its own ops tables
-- **Live break monitoring** — open price breaks from price-recon, severity-classified, with CRITICAL alert if threshold exceeded
-- **Portfolio risk view** — NAV, drawdown, VaR 95%/99% from alpha-pipeline snapshots; alert if VaR > 3% of NAV
-- **FX hedging status** — active forwards from alpha-pipeline, roll calendar, notional exposure by currency
-- **Data feed health** — vendor quality scores from market-data-hub, SLA breach tracker, latency vs contract
-- **SLA penalty engine** — commercial rebate calculation: `breach_hours × 1% × monthly_vendor_fee` per hour of contractual breach
-- **Vendor onboarding pipeline** — status of vendors in-flight from data-onboard (intake → QA → go-live)
-- **PDF stakeholder report** — ReportLab PDF: Executive Summary, Risk, Liquidity, FX Hedging, Data Health sections — generated on demand
-- **Alert engine** — CRITICAL alerts for VaR limit breaches (`>3% NAV`) and open critical breaks (`>5`)
+- **Unified aggregation** â€” reads from all 4 upstream projects' tables via shared SQLite (`fund.db`); market-ops is read-only except for its own ops tables
+- **Live break monitoring** â€” open price breaks from price-recon, severity-classified, with CRITICAL alert if threshold exceeded
+- **Portfolio risk view** â€” NAV, drawdown, VaR 95%/99% from alpha-pipeline snapshots; alert if VaR > 3% of NAV
+- **FX hedging status** â€” active forwards from alpha-pipeline, roll calendar, notional exposure by currency
+- **Data feed health** â€” vendor quality scores from market-data-hub, SLA breach tracker, latency vs contract
+- **SLA penalty engine** â€” commercial rebate calculation: `breach_hours Ã— 1% Ã— monthly_vendor_fee` per hour of contractual breach
+- **Vendor onboarding pipeline** â€” status of vendors in-flight from data-onboard (intake â†’ QA â†’ go-live)
+- **PDF stakeholder report** â€” ReportLab PDF: Executive Summary, Risk, Liquidity, FX Hedging, Data Health sections â€” generated on demand
+- **Alert engine** â€” CRITICAL alerts for VaR limit breaches (`>3% NAV`) and open critical breaks (`>5`)
 
 ---
 
@@ -24,15 +27,15 @@
 
 ```
 Upstream projects (read-only)      market-ops                    Outputs
-─────────────────────────────      ──────────                    ───────
-price-recon  (price_breaks)  ──┐
-alpha-pipeline (positions,   ──┤──► db/database.py ──► api/routes.py ──► dashboard/
-               snapshots,    ──┤         │                              index.html
-               fx_forwards)  ──┤     aggregation                      (Chart.js)
-market-data-hub (quality_    ──┤         │
-               scores,       ──┤   reports/pdf.py ──► reports/output/
-               vendor_sla)   ──┤                      market-ops-YYYY-MM-DD.pdf
-data-onboard (vendor_        ──┘
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€      â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                    â”€â”€â”€â”€â”€â”€â”€
+price-recon  (price_breaks)  â”€â”€â”
+alpha-pipeline (positions,   â”€â”€â”¤â”€â”€â–º db/database.py â”€â”€â–º api/routes.py â”€â”€â–º dashboard/
+               snapshots,    â”€â”€â”¤         â”‚                              index.html
+               fx_forwards)  â”€â”€â”¤     aggregation                      (Chart.js)
+market-data-hub (quality_    â”€â”€â”¤         â”‚
+               scores,       â”€â”€â”¤   reports/pdf.py â”€â”€â–º reports/output/
+               vendor_sla)   â”€â”€â”¤                      market-ops-YYYY-MM-DD.pdf
+data-onboard (vendor_        â”€â”€â”˜
               pipeline)
 ```
 
@@ -55,7 +58,7 @@ data-onboard (vendor_        ──┘
 |---|---|---|
 | VaR 95% limit breach | >3% of NAV | CRITICAL |
 | Open critical breaks | >5 unresolved | CRITICAL |
-| Vendor feed stale | >2× SLA latency | WARNING |
+| Vendor feed stale | >2Ã— SLA latency | WARNING |
 | SLA uptime breach | <99.9% in 30-day window | WARNING |
 
 ---
@@ -63,10 +66,10 @@ data-onboard (vendor_        ──┘
 ## SLA penalty calculation
 
 ```
-penalty_usd = breach_hours × 0.01 × monthly_vendor_fee_usd
+penalty_usd = breach_hours Ã— 0.01 Ã— monthly_vendor_fee_usd
 ```
 
-Example: Bloomberg charges $24,000/year ($2,000/month). A 5-hour outage → `5 × 0.01 × $2,000 = $100` rebate owed.
+Example: Bloomberg charges $24,000/year ($2,000/month). A 5-hour outage â†’ `5 Ã— 0.01 Ã— $2,000 = $100` rebate owed.
 
 ---
 
@@ -91,7 +94,7 @@ pip install -r requirements.txt
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env — point SHARED_DB_PATH to the repo root fund.db
+# Edit .env â€” point SHARED_DB_PATH to the repo root fund.db
 
 # 3. Start dashboard
 python main.py
@@ -116,7 +119,7 @@ Tests cover SLA penalty math, alert threshold logic, PDF data shape validation, 
 
 ## Safety
 
-`PAPER_TRADE_MODE = True` hardcoded in `config.py`. market-ops is read-only from upstream tables — it aggregates, never writes positions or trades.
+`PAPER_TRADE_MODE = True` hardcoded in `config.py`. market-ops is read-only from upstream tables â€” it aggregates, never writes positions or trades.
 
 ---
 
@@ -134,4 +137,5 @@ Tests cover SLA penalty math, alert threshold logic, PDF data shape validation, 
 
 ## Stack
 
-Python · FastAPI · SQLite (shared fund.db, read-only) · Chart.js · ReportLab
+Python Â· FastAPI Â· SQLite (shared fund.db, read-only) Â· Chart.js Â· ReportLab
+

@@ -1,8 +1,8 @@
-# alpha-pipeline — Multi-Asset Signal & Paper Trading Engine
+﻿# alpha-pipeline â€” Multi-Asset Signal & Paper Trading Engine
 
-**Business problem:** How does raw market data become a trading decision? A prop desk doesn't just buy when a price goes up — it runs the idea through a quality gate, generates a statistically validated signal, sizes it against VaR and liquidity limits, hedges the FX exposure, then routes to the broker. This project demonstrates the full front-office data lifecycle.
+**Business problem:** How does raw market data become a trading decision? A prop desk doesn't just buy when a price goes up â€” it runs the idea through a quality gate, generates a statistically validated signal, sizes it against VaR and liquidity limits, hedges the FX exposure, then routes to the broker. This project demonstrates the full front-office data lifecycle.
 
-`alpha-pipeline` is a 5-strategy signal engine with parametric VaR, QuantLib Greeks, IRP-priced FX forwards, and a LangGraph orchestration layer — connected to Alpaca paper API for execution. No live capital. Ever.
+`alpha-pipeline` is a 5-strategy signal engine with parametric VaR, QuantLib Greeks, IRP-priced FX forwards, and a LangGraph orchestration layer â€” connected to Alpaca paper API for execution. No live capital. Ever.
 
 **PAPER_TRADE_MODE = True is hardcoded in `config.py` and cannot be removed.**
 
@@ -10,18 +10,18 @@
 
 ## What it demonstrates
 
-- **5 signal strategies** — equity momentum (z-score moving average), FX carry (interest rate differential), rates (yield curve slope), credit (spread compression), commodity trend
-- **GBP-denominated fund** — all positions marked in GBP via live FX rates from FRED and ECB
-- **FX hedging via IRP** — simulated FX forwards for USD/EUR/JPY exposure using `F = S × (1+r_d)^(T/365) / (1+r_f)^(T/365)` with SOFR vs SONIA from FRED
-- **FX P&L attribution** — separates underlying asset performance from currency contribution
-- **Parametric VaR** — 1-day 95%/99%, 252-day lookback, 0.5 average pairwise correlation for portfolio VaR
-- **Options Greeks** — Delta, Gamma, Vega, Theta via QuantLib (BSM model), VIX regime gating
-- **Stress testing** — GFC 2008, COVID 2020, Rate Shock 2022, GBP Crisis 1992
-- **Performance attribution** — Sharpe ratio, Sortino ratio, CAGR vs SONIA (5.2%)
-- **Data quality gate** — every feed validated before signal logic runs; quality_gate_passed flag on every signal
-- **Liquidity control** — ADV-based position sizing (max 10% of 30-day ADV), days-to-liquidate, L1/L2/L3 tiers
-- **LangGraph agent** — orchestrates fetch → quality → signal → risk → execute; each step is a typed graph node
-- **Alpaca paper execution** — equities routed to Alpaca Paper API; FX/bonds/commodities use internal ledger
+- **5 signal strategies** â€” equity momentum (z-score moving average), FX carry (interest rate differential), rates (yield curve slope), credit (spread compression), commodity trend
+- **GBP-denominated fund** â€” all positions marked in GBP via live FX rates from FRED and ECB
+- **FX hedging via IRP** â€” simulated FX forwards for USD/EUR/JPY exposure using `F = S Ã— (1+r_d)^(T/365) / (1+r_f)^(T/365)` with SOFR vs SONIA from FRED
+- **FX P&L attribution** â€” separates underlying asset performance from currency contribution
+- **Parametric VaR** â€” 1-day 95%/99%, 252-day lookback, 0.5 average pairwise correlation for portfolio VaR
+- **Options Greeks** â€” Delta, Gamma, Vega, Theta via QuantLib (BSM model), VIX regime gating
+- **Stress testing** â€” GFC 2008, COVID 2020, Rate Shock 2022, GBP Crisis 1992
+- **Performance attribution** â€” Sharpe ratio, Sortino ratio, CAGR vs SONIA (5.2%)
+- **Data quality gate** â€” every feed validated before signal logic runs; quality_gate_passed flag on every signal
+- **Liquidity control** â€” ADV-based position sizing (max 10% of 30-day ADV), days-to-liquidate, L1/L2/L3 tiers
+- **LangGraph agent** â€” orchestrates fetch â†’ quality â†’ signal â†’ risk â†’ execute; each step is a typed graph node
+- **Alpaca paper execution** â€” equities routed to Alpaca Paper API; FX/bonds/commodities use internal ledger
 
 ---
 
@@ -29,20 +29,20 @@
 
 ```
 Market data                   Signal engine                         Outputs
-───────────                   ─────────────                         ───────
-yfinance  ──┐
-fredapi   ──┤──► data/fetcher.py ──► signals/ ──► risk/var.py ──► db/ ──► api/
-ECB API   ──┘         │               │               │
-                      │         ┌─────┴──────┐   risk/fx_hedge.py
-                data/quality    │            │   risk/performance.py
-                _gate.py     equity_     fx_carry/              │
-                             momentum/   rates/             ┌───┴──────────┐
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€                         â”€â”€â”€â”€â”€â”€â”€
+yfinance  â”€â”€â”
+fredapi   â”€â”€â”¤â”€â”€â–º data/fetcher.py â”€â”€â–º signals/ â”€â”€â–º risk/var.py â”€â”€â–º db/ â”€â”€â–º api/
+ECB API   â”€â”€â”˜         â”‚               â”‚               â”‚
+                      â”‚         â”Œâ”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”   risk/fx_hedge.py
+                data/quality    â”‚            â”‚   risk/performance.py
+                _gate.py     equity_     fx_carry/              â”‚
+                             momentum/   rates/             â”Œâ”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
                                          credit/       dashboard/     reports/
                                          commodity/   Streamlit UI   snapshot DB
-                             │
+                             â”‚
                      execution/agent.py (LangGraph)
-                             │
-                    ┌────────┴──────────┐
+                             â”‚
+                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
                alpaca paper          internal
                (equities)            ledger (FX/bonds)
 ```
@@ -53,11 +53,11 @@ ECB API   ──┘         │               │               │
 
 | Strategy | Asset class | Signal logic | Entry threshold |
 |---|---|---|---|
-| Equity momentum | Equities | MA(20) vs MA(60) z-score | z > 0.3 → long |
-| FX carry | FX | Rate differential vs forward premium | carry > 1.5% → long high-yielder |
-| Rates slope | Govt bonds | 10Y – 2Y spread vs EMA | spread widening → short duration |
-| Credit compression | Corp bonds | ICE BofA spread vs 90-day avg | compression → risk-on |
-| Commodity trend | Commodities | 20-day momentum vs vol-adj threshold | trend + vol low → long |
+| Equity momentum | Equities | MA(20) vs MA(60) z-score | z > 0.3 â†’ long |
+| FX carry | FX | Rate differential vs forward premium | carry > 1.5% â†’ long high-yielder |
+| Rates slope | Govt bonds | 10Y â€“ 2Y spread vs EMA | spread widening â†’ short duration |
+| Credit compression | Corp bonds | ICE BofA spread vs 90-day avg | compression â†’ risk-on |
+| Commodity trend | Commodities | 20-day momentum vs vol-adj threshold | trend + vol low â†’ long |
 
 ---
 
@@ -82,7 +82,7 @@ ECB API   ──┘         │               │               │
 - [x] Options Greeks via QuantLib
 - [x] Stress test under 4 scenarios (GFC/COVID/rate shock/GBP crisis)
 - [x] Liquidity-adjusted position sizing enforced
-- [x] LangGraph agent orchestrating signal → risk → execution
+- [x] LangGraph agent orchestrating signal â†’ risk â†’ execution
 - [x] Performance dashboard: Sharpe, Sortino, CAGR, drawdown, total return
 - [x] PAPER_TRADE_MODE = True visible in README
 
@@ -98,13 +98,13 @@ pip install -r requirements.txt
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env — add ALPACA_API_KEY and ALPACA_SECRET_KEY (paper keys from alpaca.markets)
+# Edit .env â€” add ALPACA_API_KEY and ALPACA_SECRET_KEY (paper keys from alpaca.markets)
 # Add FRED_API_KEY (free at fred.stlouisfed.org)
 
 # 3. Initialise DB
 python -c "from db.database import init_db; init_db()"
 
-# 4. Run the agent (one cycle: fetch → signal → risk → execute → snapshot)
+# 4. Run the agent (one cycle: fetch â†’ signal â†’ risk â†’ execute â†’ snapshot)
 python main.py
 
 # 5. Launch dashboard
@@ -127,7 +127,7 @@ Tests cover VaR (position + portfolio + stress), signal direction/confidence, FX
 
 ## Safety
 
-`PAPER_TRADE_MODE = True` is hardcoded in `config.py`. All Alpaca calls go to `https://paper-api.alpaca.markets`. No live brokerage credentials are stored in this repo — see `.env.example` for the required variable names.
+`PAPER_TRADE_MODE = True` is hardcoded in `config.py`. All Alpaca calls go to `https://paper-api.alpaca.markets`. No live brokerage credentials are stored in this repo â€” see `.env.example` for the required variable names.
 
 ---
 
@@ -147,4 +147,5 @@ alpha-pipeline is project 3 of 5. All projects share a common SQLite database at
 
 ## Stack
 
-Python · LangGraph · QuantLib · yfinance · fredapi · ECB API · Alpaca Paper API · SQLite · Streamlit
+Python Â· LangGraph Â· QuantLib Â· yfinance Â· fredapi Â· ECB API Â· Alpaca Paper API Â· SQLite Â· Streamlit
+
