@@ -1,6 +1,16 @@
+<div align="center">
+
+![MarketVentures Architecture](docs/banner.jpg)
+
 # MarketVentures — GBP Fund Market Data Portfolio
 
-[![CI](https://github.com/KeepingJones/MarketVentures/actions/workflows/ci.yml/badge.svg)](https://github.com/KeepingJones/MarketVentures/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white&style=flat-square)](https://www.python.org/)
+[![Architecture](https://img.shields.io/badge/Architecture-5--Service%20Monorepo-0ea5e9?style=flat-square)](https://github.com/KeepingJones/MarketVentures)
+[![Database](https://img.shields.io/badge/Storage-SQLite%20%7C%20DuckDB-10b981?style=flat-square)](https://github.com/KeepingJones/MarketVentures)
+[![Tests](https://img.shields.io/badge/Tests-150%2B%20Passing-emerald?style=flat-square)](https://github.com/KeepingJones/MarketVentures)
+[![CI](https://github.com/KeepingJones/MarketVentures/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/KeepingJones/MarketVentures/actions/workflows/ci.yml)
+
+</div>
 
 A 5-project Python monorepo demonstrating the full market data lifecycle of a GBP-denominated fund — from raw price ingestion to paper trading to stakeholder reporting. Built to show hiring managers at prop trading firms and market data vendors what production-grade data engineering looks like in Python.
 
