@@ -1,8 +1,8 @@
 # MarketVentures — Development Standards
 
 > Read this before adding any code to any project.
-> Plan: `C:\Users\ewanj\AI Context\AI Context\Job-Hunt\master-plan.md`
-> Enhancement plan: `C:\Users\ewanj\AI Context\AI Context\Job-Hunt\scratch\build-improve-learn.md`
+> Plan: `master-plan.md`
+> Enhancement plan: `build-improve-learn.md`
 
 ---
 
